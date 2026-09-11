@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trade with Bajrangi</title>
+<style>
+  :root{
+    --ink:#0b0e0d;
+    --panel:#121613;
+    --line:#233029;
+    --saffron:#ff9933;
+    --saffron-dim:#c9761f;
+    --up:#3ddc84;
+    --down:#ff5c5c;
+    --paper:#eef1ea;
+    --paper-dim:#9fada2;
+    --mono: "JetBrains Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --display: "Bebas Neue","Oswald",Impact,sans-serif;
+    --body: "Inter","Segoe UI",system-ui,sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--body);
+    overflow-x:hidden;
+  }
+
+  /* ambient market grid */
+  .grid-bg{
+    position:fixed; inset:0; z-index:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity:0.28;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black 40%, transparent 90%);
+  }
+
+  .wrap{position:relative; z-index:1;}
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 28px 6vw;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-weight:700; letter-spacing:0.04em;
+    font-size:15px; color:var(--paper-dim);
+  }
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--up); box-shadow:0 0 8px var(--up); animation:pulse 1.8s infinite ease-in-out;}
+  @keyframes pulse{ 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(1.3);} }
+
+  .reg-badge{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11.5px; color:var(--paper-dim);
+    border:1px solid var(--line); border-radius:3px; padding:6px 12px;
+    letter-spacing:0.03em;
+  }
+  .reg-badge b{color:var(--saffron); font-weight:700;}
+  @media (max-width:640px){ .reg-badge{display:none; } }
+
+  nav a{
+    font-family:var(--mono); font-size:13px; color:var(--paper-dim); text-decoration:none;
+    margin-left:28px; letter-spacing:0.03em;
+  }
+  nav a:hover{color:var(--saffron);}
+  nav{display:flex;}
+  @media (max-width:640px){ nav{display:none;} }
+
+  /* HERO */
+  .hero{
+    padding: 9vh 6vw 8vh;
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:40px;
+    align-items:center;
+    max-width:1280px;
+    margin:0 auto;
+  }
+  @media (max-width:900px){ .hero{grid-template-columns:1fr; padding-top:6vh;} }
+
+  .eyebrow{
+    font-family:var(--mono); color:var(--saffron); font-size:13px; letter-spacing:0.18em;
+    text-transform:uppercase; display:flex; align-items:center; gap:10px; margin-bottom:22px;
+  }
+  .eyebrow::before{content:""; width:26px; height:1px; background:var(--saffron);}
+
+  h1{
+    font-family:var(--display);
+    font-size:clamp(52px, 8vw, 108px);
+    line-height:0.92;
+    letter-spacing:0.01em;
+    text-transform:uppercase;
+  }
+  h1 .accent{color:var(--saffron); position:relative;}
+
+  .sub{
+    margin-top:26px;
+    font-size:17px;
+    line-height:1.65;
+    color:var(--paper-dim);
+    max-width:46ch;
+  }
+
+  .cta-row{margin-top:38px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+
+  .cta{
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--saffron); color:#141110;
+    font-family:var(--body); font-weight:700; font-size:15.5px;
+    padding:16px 26px; border-radius:3px;
+    text-decoration:none;
+    transition: transform .15s ease, box-shadow .15s ease;
+    box-shadow: 0 0 0 1px rgba(255,153,51,0.3);
+  }
+  .cta:hover{transform:translateY(-2px); box-shadow:0 10px 30px -8px rgba(255,153,51,0.55);}
+  .cta svg{width:18px; height:18px;}
+
+  .cta-note{font-family:var(--mono); font-size:12.5px; color:var(--paper-dim);}
+  .cta-note b{color:var(--up); font-weight:700;}
+
+  /* chart visual */
+  .chart-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 20px 14px;
+    position:relative;
+  }
+  .chart-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:var(--mono); font-size:12px; color:var(--paper-dim);
+    margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--line);
+  }
+  .chart-head .price{color:var(--up); font-size:20px; font-weight:700;}
+  .chart-head .tag{color:var(--saffron);}
+
+  .candles{
+    height:220px; display:flex; align-items:flex-end; gap:6px;
+  }
+  .candle{width:100%; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;}
+  .candle .wick{width:1.5px; background:currentColor;}
+  .candle .body{width:70%; min-height:3px;}
+  .candle.up{color:var(--up);}
+  .candle.down{color:var(--down);}
+  .candle .body.up{background:var(--up);}
+  .candle .body.down{background:var(--down);}
+
+  .ticker-line{
+    margin-top:16px; padding-top:14px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:11.5px; color:var(--paper-dim);
+    display:flex; justify-content:space-between;
+  }
+
+  /* SIGNAL STRIP */
+  .strip{
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    overflow:hidden; white-space:nowrap; background:var(--panel);
+  }
+  .strip-track{
+    display:inline-block; font-family:var(--mono); font-size:13px; letter-spacing:0.04em;
+    padding:13px 0; animation: scroll 26s linear infinite; color:var(--paper-dim);
+  }
+  .strip-track span{margin:0 22px;}
+  .strip-track .u{color:var(--up);} .strip-track .d{color:var(--down);} .strip-track .s{color:var(--saffron);}
+  @keyframes scroll{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+
+  /* WHAT YOU GET */
+  section.feat{
+    max-width:1280px; margin:0 auto; padding:11vh 6vw 8vh;
+  }
+  .feat-head{max-width:640px; margin-bottom:56px;}
+  .feat-head .eyebrow{margin-bottom:16px;}
+  .feat-head h2{
+    font-family:var(--display); font-size:clamp(34px,4.2vw,52px); text-transform:uppercase; line-height:1;
+  }
+  .feat-head p{margin-top:16px; color:var(--paper-dim); font-size:16px; line-height:1.6;}
+
+  .feat-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--line); border:1px solid var(--line);
+  }
+  @media (max-width:860px){ .feat-grid{grid-template-columns:1fr;} }
+  .feat-item{background:var(--ink); padding:34px 28px;}
+  .feat-item .mark{
+    font-family:var(--mono); color:var(--saffron); font-size:13px; margin-bottom:18px; display:block;
+  }
+  .feat-item h3{font-family:var(--body); font-size:19px; font-weight:700; margin-bottom:10px;}
+  .feat-item p{color:var(--paper-dim); font-size:14.5px; line-height:1.6;}
+
+  /* SIGN UP */
+  section.signup{
+    max-width:1280px; margin:0 auto; padding:0 6vw 10vh;
+  }
+  .signup-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:56px 8vw; display:grid; grid-template-columns:0.9fr 1.1fr; gap:48px; align-items:start;
+  }
+  @media (max-width:860px){ .signup-card{grid-template-columns:1fr; padding:40px 6vw;} }
+  .signup-card h2{
+    font-family:var(--display); font-size:clamp(30px,4vw,44px); text-transform:uppercase; line-height:1;
+  }
+  .signup-card p.lead{color:var(--paper-dim); margin-top:16px; font-size:15.5px; line-height:1.65; max-width:42ch;}
+  .signup-perks{margin-top:28px; display:flex; flex-direction:column; gap:12px;}
+  .signup-perks div{
+    display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--paper-dim);
+    font-family:var(--mono);
+  }
+  .signup-perks div::before{content:"→"; color:var(--saffron);}
+
+  .gform-wrap{
+    background:var(--ink); border:1px solid var(--line); border-radius:6px; overflow:hidden;
+  }
+  .gform-wrap iframe{
+    width:100%; height:520px; border:none; display:block; background:var(--ink);
+  }
+  @media (max-width:640px){ .gform-wrap iframe{height:620px;} }
+
+  .gform-fallback{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding:14px 16px; border-top:1px solid var(--line); background:var(--panel);
+  }
+  .gform-fallback span{font-family:var(--mono); font-size:11.5px; color:var(--paper-dim);}
+  .gform-fallback a{
+    font-family:var(--mono); font-size:12.5px; color:var(--saffron); text-decoration:none; font-weight:700;
+  }
+  .gform-fallback a:hover{text-decoration:underline;}
+
+  .signup-consent{font-family:var(--mono); font-size:11px; color:var(--paper-dim); line-height:1.6; margin-top:14px;}
+
+  /* JOIN CTA BLOCK */
+  .join{
+    max-width:1280px; margin:0 auto 12vh; padding:0 6vw;
+  }
+  .join-card{
+    background:linear-gradient(160deg, var(--panel), #0f130f 70%);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:64px 8vw;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .join-card::before{
+    content:""; position:absolute; top:-40%; left:50%; transform:translateX(-50%);
+    width:600px; height:600px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,153,51,0.16), transparent 65%);
+    pointer-events:none;
+  }
+  .join-card h2{
+    font-family:var(--display); font-size:clamp(36px,5.5vw,64px); text-transform:uppercase; line-height:1;
+    position:relative;
+  }
+  .join-card p{color:var(--paper-dim); margin:18px auto 34px; max-width:52ch; font-size:16px; position:relative;}
+  .members{
+    display:flex; justify-content:center; gap:36px; margin-bottom:36px; position:relative;
+    font-family:var(--mono); flex-wrap:wrap;
+  }
+  .members div{text-align:center;}
+  .members b{display:block; font-size:26px; color:var(--paper); }
+  .members span{font-size:11.5px; color:var(--paper-dim); letter-spacing:0.06em; text-transform:uppercase;}
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:30px 6vw; display:flex; justify-content:space-between; align-items:center;
+    font-family:var(--mono); font-size:12px; color:var(--paper-dim); flex-wrap:wrap; gap:12px;
+  }
+  footer a{color:var(--saffron); text-decoration:none;}
+
+  .disclaimer{
+    max-width:1280px; margin:0 auto; padding:0 6vw 6vh; font-family:var(--mono);
+    font-size:11.5px; color:#5c6a61; line-height:1.7; max-width:900px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .strip-track, .brand .dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand"><span class="dot"></span>TRADE WITH BAJRANGI</div>
+    <nav>
+      <a href="#signals">Signals</a>
+      <a href="#what-you-get">What You Get</a>
+      <a href="#signup">Sign Up</a>
+      <a href="#join">Join</a>
+    </nav>
+    <div class="reg-badge">SEBI Reg. RA · <b>INH000018832</b></div>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Telegram · Live Market Calls</div>
+      <h1>TRADE<br>WITH<br><span class="accent">BAJRANGI</span></h1>
+      <p class="sub">Straightforward, disciplined market calls delivered where you already are — Telegram. No noise, no fluff, just entries, exits, and the reasoning behind them.</p>
+      <p style="font-family:var(--mono); font-size:12.5px; color:var(--paper-dim); margin-top:16px; letter-spacing:0.02em;">SEBI Registered Research Analyst · License No. <span style="color:var(--saffron);">INH000018832</span></p>
+      <div class="cta-row">
+        <a class="cta" href="https://t.me/+x4LOoyz4sLA1OWU9" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.5 3.5L2.5 11l6 2.2M21.5 3.5L18 20.5l-9.5-7.3M21.5 3.5L8.5 13.2M8.5 13.2v6.3l3-3.3" stroke="#141110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Join the Channel
+        </a>
+        <span class="cta-note">Free to join · <b>Live</b> right now</span>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-head">
+        <span>NIFTY · 5M</span>
+        <span class="price">▲ 24,812.40</span>
+        <span class="tag">CALL ACTIVE</span>
+      </div>
+      <div class="candles" id="candles"></div>
+      <div class="ticker-line">
+        <span>VOL 2.4M</span>
+        <span>RSI 61</span>
+        <span>BAJRANGI DESK</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip" id="signals">
+    <div class="strip-track">
+      <span class="u">▲ NIFTY LONG TRIGGERED</span>
+      <span class="s">★ NEW WATCHLIST DROPPED</span>
+      <span class="d">▼ BANKNIFTY BOOKED +140PTS</span>
+      <span class="u">▲ GOLD BREAKOUT CALL LIVE</span>
+      <span class="s">★ WEEKLY STRATEGY NOTE OUT</span>
+      <span class="u">▲ NIFTY LONG TRIGGERED</span>
+      <span class="s">★ NEW WATCHLIST DROPPED</span>
+      <span class="d">▼ BANKNIFTY BOOKED +140PTS</span>
+      <span class="u">▲ GOLD BREAKOUT CALL LIVE</span>
+      <span class="s">★ WEEKLY STRATEGY NOTE OUT</span>
+    </div>
+  </div>
+
+  <section class="feat" id="what-you-get">
+    <div class="feat-head">
+      <div class="eyebrow">On the Desk</div>
+      <h2>What you get inside</h2>
+      <p>Every post earns its place in your feed. Here's exactly what lands in the channel, and when.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-item">
+        <span class="mark">01 / ENTRY</span>
+        <h3>Daily Trade Calls</h3>
+        <p>Clear entry, stop-loss and target levels posted before the move, not after.</p>
+      </div>
+      <div class="feat-item">
+        <span class="mark">02 / CONTEXT</span>
+        <h3>Market Notes</h3>
+        <p>Short, plain-language reads on what's actually driving the session.</p>
+      </div>
+      <div class="feat-item">
+        <span class="mark">03 / REVIEW</span>
+        <h3>Weekly Recap</h3>
+        <p>An honest tally of what worked, what didn't, and why — every week.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="signup" id="signup">
+    <div class="signup-card">
+      <div>
+        <div class="eyebrow">Step 1</div>
+        <h2>Reserve your spot</h2>
+        <p class="lead">Fill in the form — you'll get the Telegram invite right after, plus we can reach you directly if the channel link ever changes.</p>
+        <div class="signup-perks">
+          <div>Priority access to new watchlists</div>
+          <div>Direct alert if the channel link changes</div>
+          <div>Occasional desk notes by email</div>
+        </div>
+        <p class="signup-consent">SEBI Reg. RA — INH000018832. Registration does not guarantee returns.</p>
+      </div>
+
+      <div>
+        <div class="gform-wrap">
+          <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeE_ShC6d_OAcjd_2oaml8jI-4JTcnXLUvXzbZXjGriwqBJlA/viewform?embedded=true" title="Trade with Bajrangi sign up form" loading="lazy">Loading form…</iframe>
+          <div class="gform-fallback">
+            <span>Form not loading?</span>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeE_ShC6d_OAcjd_2oaml8jI-4JTcnXLUvXzbZXjGriwqBJlA/viewform?usp=dialog" target="_blank" rel="noopener">Open it in a new tab →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="join" id="join">
+    <div class="join-card">
+      <h2>Get the next call<br>before the candle closes</h2>
+      <p>Join the channel and see live calls, market notes, and the reasoning behind every trade — straight from Bajrangi's desk.</p>
+      <div class="members">
+        <div><b>Live</b><span>Channel Status</span></div>
+        <div><b>Daily</b><span>Posting Frequency</span></div>
+        <div><b>Free</b><span>To Join</span></div>
+      </div>
+      <a class="cta" href="https://t.me/+x4LOoyz4sLA1OWU9" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.5 3.5L2.5 11l6 2.2M21.5 3.5L18 20.5l-9.5-7.3M21.5 3.5L8.5 13.2M8.5 13.2v6.3l3-3.3" stroke="#141110" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Join Trade with Bajrangi
+      </a>
+    </div>
+  </section>
+
+  <p class="disclaimer">
+    SEBI Registered Research Analyst — License No. INH000018832. Registration granted by SEBI and NISM certification do not guarantee the performance of the intermediary or provide any assurance of returns to investors. Investments in the securities market are subject to market risks; read all related documents carefully before investing. Content shared on this channel is for informational and educational purposes and should not be construed as a recommendation to buy or sell any security. Please verify this registration independently on the SEBI website (sebi.gov.in) before relying on any research or recommendation.
+  </p>
+
+  <footer>
+    <span>© 2026 Trade with Bajrangi · SEBI Reg. INH000018832</span>
+    <a href="https://t.me/+x4LOoyz4sLA1OWU9" target="_blank" rel="noopener">t.me/+x4LOoyz4sLA1OWU9</a>
+  </footer>
+
+</div>
+
+<script>
+  const candlesEl = document.getElementById('candles');
+  const n = 26;
+  let prev = 50;
+  for(let i=0;i<n;i++){
+    const up = Math.random() > 0.42;
+    const bodyH = 14 + Math.random()*46;
+    const wickH = bodyH + 10 + Math.random()*22;
+    const c = document.createElement('div');
+    c.className = 'candle ' + (up ? 'up' : 'down');
+    c.style.height = wickH + 'px';
+    c.innerHTML = `<div class="wick" style="height:${wickH}px"></div>`;
+    c.style.position = 'relative';
+    const body = document.createElement('div');
+    body.className = 'body ' + (up ? 'up' : 'down');
+    body.style.height = bodyH + 'px';
+    body.style.position = 'absolute';
+    body.style.bottom = ((wickH-bodyH)/2) + 'px';
+    c.appendChild(body);
+    candlesEl.appendChild(c);
+  }
+</script>
+
+</body>
+</html>
